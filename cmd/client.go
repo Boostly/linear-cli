@@ -313,3 +313,228 @@ func getLinearClient() (*LinearClient, error) {
 	}
 	return NewLinearClient(apiKey), nil
 }
+
+func (lc *LinearClient) GetTeams() ([]Team, error) {
+	query := `
+		query {
+			teams {
+				nodes {
+					id
+					name
+					key
+				}
+			}
+		}
+	`
+
+	reqBody := GraphQLRequest{Query: query}
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", linearAPIURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", lc.apiKey)
+
+	resp, err := lc.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+	}
+
+	var teamsResp TeamsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&teamsResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return teamsResp.Data.Teams.Nodes, nil
+}
+
+func (lc *LinearClient) GetWorkflowStates(teamID string) ([]WorkflowState, error) {
+	query := fmt.Sprintf(`
+		query {
+			workflowStates(filter: { team: { id: { eq: "%s" } } }) {
+				nodes {
+					id
+					name
+					type
+				}
+			}
+		}
+	`, teamID)
+
+	reqBody := GraphQLRequest{Query: query}
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", linearAPIURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", lc.apiKey)
+
+	resp, err := lc.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+	}
+
+	var statesResp WorkflowStatesResponse
+	if err := json.NewDecoder(resp.Body).Decode(&statesResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return statesResp.Data.WorkflowStates.Nodes, nil
+}
+
+func (lc *LinearClient) GetTeamMembers(teamID string) ([]User, error) {
+	query := fmt.Sprintf(`
+		query {
+			team(id: "%s") {
+				members {
+					nodes {
+						id
+						name
+						email
+					}
+				}
+			}
+		}
+	`, teamID)
+
+	reqBody := GraphQLRequest{Query: query}
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", linearAPIURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", lc.apiKey)
+
+	resp, err := lc.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+	}
+
+	var membersResp TeamMembersResponse
+	if err := json.NewDecoder(resp.Body).Decode(&membersResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return membersResp.Data.Team.Members.Nodes, nil
+}
+
+func (lc *LinearClient) CreateIssue(input IssueCreateInput) (*CreatedIssue, error) {
+	mutation := `
+		mutation IssueCreate($input: IssueCreateInput!) {
+			issueCreate(input: $input) {
+				success
+				issue {
+					id
+					title
+					identifier
+					url
+					state {
+						name
+					}
+					team {
+						name
+					}
+				}
+			}
+		}
+	`
+
+	// Build input map
+	inputMap := map[string]interface{}{
+		"title":  input.Title,
+		"teamId": input.TeamID,
+	}
+
+	if input.Description != "" {
+		inputMap["description"] = input.Description
+	}
+	if input.Priority > 0 {
+		inputMap["priority"] = input.Priority
+	}
+	if input.StateID != "" {
+		inputMap["stateId"] = input.StateID
+	}
+	if input.AssigneeID != "" {
+		inputMap["assigneeId"] = input.AssigneeID
+	}
+
+	variables := map[string]interface{}{
+		"input": inputMap,
+	}
+
+	reqBody := GraphQLRequestWithVariables{
+		Query:     mutation,
+		Variables: variables,
+	}
+
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", linearAPIURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", lc.apiKey)
+
+	resp, err := lc.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+	}
+
+	var createResp IssueCreateFullResponse
+	if err := json.NewDecoder(resp.Body).Decode(&createResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if len(createResp.Errors) > 0 {
+		return nil, fmt.Errorf("API error: %s", createResp.Errors[0].Message)
+	}
+
+	if !createResp.Data.IssueCreate.Success {
+		return nil, fmt.Errorf("failed to create issue")
+	}
+
+	return &createResp.Data.IssueCreate.Issue, nil
+}

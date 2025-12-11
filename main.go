@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -11,9 +10,14 @@ import (
 
 func main() {
 	// Load environment variables from .env file
+	// Try local .env first, then ~/.config/linear/.env
 	err := godotenv.Load()
 	if err != nil {
-		log.Printf("Warning: Could not load .env file: %v", err)
+		home, _ := os.UserHomeDir()
+		if home != "" {
+			configPath := home + "/.config/linear/.env"
+			err = godotenv.Load(configPath)
+		}
 	}
 
 	// Check if we have the required API key

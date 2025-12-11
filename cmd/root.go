@@ -36,6 +36,7 @@ func Execute() {
 func init() {
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(meCmd)
+	rootCmd.AddCommand(createCmd)
 
 	rootCmd.SetHelpTemplate(`{{.Long}}
 
@@ -45,6 +46,7 @@ Usage:
 Available Commands:
   list        List all issues in the workspace
   me          List issues assigned to you
+  create      Create a new issue
   tui         Run the interactive TUI (default)
   help        Help about any command
 
@@ -54,11 +56,12 @@ Flags:
 Use "{{.CommandPath}} [command] --help" for more information about a command.
 
 Examples:
-  linear                        # Run the interactive TUI
-  linear tui                    # Run the interactive TUI explicitly
-  linear list                   # List all issues
-  linear list -s "Backlog"      # List all backlog issues
-  linear me                     # List your assigned issues
-  linear me -s "In Progress"    # List your in-progress issues
+  linear                              # Run the interactive TUI
+  linear tui                          # Run the interactive TUI explicitly
+  linear list                         # List all issues
+  linear list -s "Backlog"            # List all backlog issues
+  linear me                           # List your assigned issues
+  linear me -s "In Progress"          # List your in-progress issues
+  linear create -t "Bug fix" -T ENG   # Create a new issue
 `)
 }
