@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/trip-zip/linear-tui/cmd"
+	"github.com/Boostly/linear-cli/cmd"
 )
 
 func main() {

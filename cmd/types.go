@@ -11,9 +11,12 @@ type Issue struct {
 	Identifier  string `json:"identifier"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
+	URL         string `json:"url"`
+	BranchName  string `json:"branchName"`
 	State       struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
+		Type string `json:"type"`
 	} `json:"state"`
 	Team struct {
 		ID   string `json:"id"`
@@ -169,6 +172,41 @@ type IssueUpdateResponse struct {
 type SingleIssueResponse struct {
 	Data struct {
 		Issue Issue `json:"issue"`
+	} `json:"data"`
+	Errors []struct {
+		Message string `json:"message"`
+	} `json:"errors,omitempty"`
+}
+
+// Comment represents a Linear comment
+type Comment struct {
+	ID        string `json:"id"`
+	Body      string `json:"body"`
+	CreatedAt string `json:"createdAt"`
+	User      struct {
+		Name string `json:"name"`
+	} `json:"user"`
+}
+
+// CommentCreateResponse for the comment mutation response
+type CommentCreateResponse struct {
+	Data struct {
+		CommentCreate struct {
+			Success bool    `json:"success"`
+			Comment Comment `json:"comment"`
+		} `json:"commentCreate"`
+	} `json:"data"`
+	Errors []struct {
+		Message string `json:"message"`
+	} `json:"errors,omitempty"`
+}
+
+// IssueSearchResponse for search query
+type IssueSearchResponse struct {
+	Data struct {
+		IssueSearch struct {
+			Nodes []Issue `json:"nodes"`
+		} `json:"issueSearch"`
 	} `json:"data"`
 	Errors []struct {
 		Message string `json:"message"`
