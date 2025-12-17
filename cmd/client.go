@@ -71,12 +71,15 @@ func (lc *LinearClient) GetIssues() ([]Issue, error) {
 			issues(first: 20) {
 				nodes {
 					id
+					identifier
 					title
 					description
 					state {
+						id
 						name
 					}
 					team {
+						id
 						name
 					}
 					assignee {
@@ -134,12 +137,15 @@ func (lc *LinearClient) GetMyIssues() ([]Issue, error) {
 			issues(first: 50, filter: { assignee: { id: { eq: "%s" } } }) {
 				nodes {
 					id
+					identifier
 					title
 					description
 					state {
+						id
 						name
 					}
 					team {
+						id
 						name
 					}
 					assignee {
@@ -190,12 +196,15 @@ func (lc *LinearClient) GetIssuesByStatus(status string) ([]Issue, error) {
 			issues(first: 50, filter: { state: { name: { eq: "%s" } } }) {
 				nodes {
 					id
+					identifier
 					title
 					description
 					state {
+						id
 						name
 					}
 					team {
+						id
 						name
 					}
 					assignee {
@@ -250,18 +259,21 @@ func (lc *LinearClient) GetMyIssuesByStatus(status string) ([]Issue, error) {
 	// Query for issues assigned to the current user with specific status
 	query := fmt.Sprintf(`
 		query {
-			issues(first: 50, filter: { 
+			issues(first: 50, filter: {
 				assignee: { id: { eq: "%s" } },
 				state: { name: { eq: "%s" } }
 			}) {
 				nodes {
 					id
+					identifier
 					title
 					description
 					state {
+						id
 						name
 					}
 					team {
+						id
 						name
 					}
 					assignee {
@@ -537,4 +549,165 @@ func (lc *LinearClient) CreateIssue(input IssueCreateInput) (*CreatedIssue, erro
 	}
 
 	return &createResp.Data.IssueCreate.Issue, nil
+}
+
+func (lc *LinearClient) GetIssue(identifier string) (*Issue, error) {
+	query := fmt.Sprintf(`
+		query {
+			issue(id: "%s") {
+				id
+				identifier
+				title
+				description
+				state {
+					id
+					name
+				}
+				team {
+					id
+					name
+				}
+				assignee {
+					id
+					name
+				}
+				priority
+			}
+		}
+	`, identifier)
+
+	reqBody := GraphQLRequest{Query: query}
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", linearAPIURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", lc.apiKey)
+
+	resp, err := lc.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+	}
+
+	var issueResp SingleIssueResponse
+	if err := json.NewDecoder(resp.Body).Decode(&issueResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if len(issueResp.Errors) > 0 {
+		return nil, fmt.Errorf("API error: %s", issueResp.Errors[0].Message)
+	}
+
+	if issueResp.Data.Issue.ID == "" {
+		return nil, fmt.Errorf("issue not found: %s", identifier)
+	}
+
+	return &issueResp.Data.Issue, nil
+}
+
+func (lc *LinearClient) UpdateIssue(issueID string, input IssueUpdateInput) (*Issue, error) {
+	mutation := `
+		mutation IssueUpdate($id: String!, $input: IssueUpdateInput!) {
+			issueUpdate(id: $id, input: $input) {
+				success
+				issue {
+					id
+					identifier
+					title
+					description
+					state {
+						id
+						name
+					}
+					team {
+						id
+						name
+					}
+					assignee {
+						id
+						name
+					}
+					priority
+				}
+			}
+		}
+	`
+
+	// Build input map - only include fields that are being changed
+	inputMap := map[string]interface{}{}
+
+	if input.Title != "" {
+		inputMap["title"] = input.Title
+	}
+	if input.Description != "" {
+		inputMap["description"] = input.Description
+	}
+	if input.Priority != nil {
+		inputMap["priority"] = *input.Priority
+	}
+	if input.StateID != "" {
+		inputMap["stateId"] = input.StateID
+	}
+	if input.AssigneeID != "" {
+		inputMap["assigneeId"] = input.AssigneeID
+	}
+
+	variables := map[string]interface{}{
+		"id":    issueID,
+		"input": inputMap,
+	}
+
+	reqBody := GraphQLRequestWithVariables{
+		Query:     mutation,
+		Variables: variables,
+	}
+
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", linearAPIURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", lc.apiKey)
+
+	resp, err := lc.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+	}
+
+	var updateResp IssueUpdateResponse
+	if err := json.NewDecoder(resp.Body).Decode(&updateResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if len(updateResp.Errors) > 0 {
+		return nil, fmt.Errorf("API error: %s", updateResp.Errors[0].Message)
+	}
+
+	if !updateResp.Data.IssueUpdate.Success {
+		return nil, fmt.Errorf("failed to update issue")
+	}
+
+	return &updateResp.Data.IssueUpdate.Issue, nil
 }

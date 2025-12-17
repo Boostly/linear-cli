@@ -37,6 +37,7 @@ func init() {
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(meCmd)
 	rootCmd.AddCommand(createCmd)
+	rootCmd.AddCommand(updateCmd)
 
 	rootCmd.SetHelpTemplate(`{{.Long}}
 
@@ -47,6 +48,7 @@ Available Commands:
   list        List all issues in the workspace
   me          List issues assigned to you
   create      Create a new issue
+  update      Update an existing issue
   tui         Run the interactive TUI (default)
   help        Help about any command
 
@@ -63,5 +65,6 @@ Examples:
   linear me                           # List your assigned issues
   linear me -s "In Progress"          # List your in-progress issues
   linear create -t "Bug fix" -T ENG   # Create a new issue
+  linear update -i ENG-123 -s "Done"  # Update issue status
 `)
 }

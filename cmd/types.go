@@ -8,12 +8,15 @@ type User struct {
 
 type Issue struct {
 	ID          string `json:"id"`
+	Identifier  string `json:"identifier"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	State       struct {
+		ID   string `json:"id"`
 		Name string `json:"name"`
 	} `json:"state"`
 	Team struct {
+		ID   string `json:"id"`
 		Name string `json:"name"`
 	} `json:"team"`
 	Assignee struct {
@@ -134,6 +137,38 @@ type IssueCreateFullResponse struct {
 			Success bool         `json:"success"`
 			Issue   CreatedIssue `json:"issue"`
 		} `json:"issueCreate"`
+	} `json:"data"`
+	Errors []struct {
+		Message string `json:"message"`
+	} `json:"errors,omitempty"`
+}
+
+// IssueUpdateInput represents the input for updating an issue
+type IssueUpdateInput struct {
+	Title       string
+	Description string
+	Priority    *int // pointer to distinguish 0 from unset
+	StateID     string
+	AssigneeID  string
+}
+
+// IssueUpdateResponse for the mutation response
+type IssueUpdateResponse struct {
+	Data struct {
+		IssueUpdate struct {
+			Success bool  `json:"success"`
+			Issue   Issue `json:"issue"`
+		} `json:"issueUpdate"`
+	} `json:"data"`
+	Errors []struct {
+		Message string `json:"message"`
+	} `json:"errors,omitempty"`
+}
+
+// SingleIssueResponse for fetching a single issue
+type SingleIssueResponse struct {
+	Data struct {
+		Issue Issue `json:"issue"`
 	} `json:"data"`
 	Errors []struct {
 		Message string `json:"message"`
