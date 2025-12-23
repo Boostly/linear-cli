@@ -27,6 +27,21 @@ type Issue struct {
 		Name string `json:"name"`
 	} `json:"assignee"`
 	Priority int `json:"priority"`
+	Parent   struct {
+		ID         string `json:"id"`
+		Identifier string `json:"identifier"`
+		Title      string `json:"title"`
+	} `json:"parent"`
+	Children struct {
+		Nodes []struct {
+			ID         string `json:"id"`
+			Identifier string `json:"identifier"`
+			Title      string `json:"title"`
+			State      struct {
+				Name string `json:"name"`
+			} `json:"state"`
+		} `json:"nodes"`
+	} `json:"children"`
 }
 
 type IssuesResponse struct {
@@ -104,6 +119,7 @@ type IssueCreateInput struct {
 	Priority    int
 	StateID     string
 	AssigneeID  string
+	ParentID    string
 }
 
 // IssueCreateResponse for the mutation response

@@ -15,6 +15,7 @@ var (
 	createPriority    int
 	createState       string
 	createAssignee    string
+	createParent      string
 )
 
 var createCmd = &cobra.Command{
@@ -25,9 +26,10 @@ var createCmd = &cobra.Command{
 Requires at minimum a title and team. Team can be specified by name or key.
 
 Examples:
-  linear-tui create -t "Bug fix" -T "Engineering"
-  linear-tui create -t "New feature" -T ENG -d "Description here" -p 2
-  linear-tui create -t "Task" -T "Product" -s "Backlog" -a "john@example.com"`,
+  linear-cli create -t "Bug fix" -T "Engineering"
+  linear-cli create -t "New feature" -T ENG -d "Description here" -p 2
+  linear-cli create -t "Task" -T "Product" -s "Backlog" -a "john@example.com"
+  linear-cli create -t "Sub-task" -T ENG -P ENG-123  # Create sub-issue`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if createTitle == "" {
 			fmt.Println("Error: title is required (-t, --title)")
@@ -127,6 +129,16 @@ Examples:
 			input.AssigneeID = assigneeID
 		}
 
+		// Resolve parent issue if provided
+		if createParent != "" {
+			parentIssue, err := client.GetIssue(createParent)
+			if err != nil {
+				fmt.Printf("Error: parent issue '%s' not found: %v\n", createParent, err)
+				os.Exit(1)
+			}
+			input.ParentID = parentIssue.ID
+		}
+
 		fmt.Println("Creating issue...")
 
 		issue, err := client.CreateIssue(input)
@@ -148,4 +160,5 @@ func init() {
 	createCmd.Flags().IntVarP(&createPriority, "priority", "p", 0, "Priority (0=None, 1=Urgent, 2=High, 3=Medium, 4=Low)")
 	createCmd.Flags().StringVarP(&createState, "state", "s", "", "Workflow state name")
 	createCmd.Flags().StringVarP(&createAssignee, "assignee", "a", "", "Assignee name or email")
+	createCmd.Flags().StringVarP(&createParent, "parent", "P", "", "Parent issue identifier for sub-issues (e.g., ENG-123)")
 }

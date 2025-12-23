@@ -42,10 +42,21 @@ var getCmd = &cobra.Command{
 			fmt.Printf("Branch: %s\n", issue.BranchName)
 		}
 
+		if issue.Parent.ID != "" {
+			fmt.Printf("Parent: %s - %s\n", issue.Parent.Identifier, issue.Parent.Title)
+		}
+
 		fmt.Printf("URL: %s\n", issue.URL)
 
 		if issue.Description != "" {
 			fmt.Printf("\nDescription:\n%s\n", issue.Description)
+		}
+
+		if len(issue.Children.Nodes) > 0 {
+			fmt.Printf("\nSub-issues (%d):\n", len(issue.Children.Nodes))
+			for _, child := range issue.Children.Nodes {
+				fmt.Printf("  - %s: %s [%s]\n", child.Identifier, child.Title, child.State.Name)
+			}
 		}
 	},
 }

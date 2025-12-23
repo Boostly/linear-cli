@@ -502,6 +502,9 @@ func (lc *LinearClient) CreateIssue(input IssueCreateInput) (*CreatedIssue, erro
 	if input.AssigneeID != "" {
 		inputMap["assigneeId"] = input.AssigneeID
 	}
+	if input.ParentID != "" {
+		inputMap["parentId"] = input.ParentID
+	}
 
 	variables := map[string]interface{}{
 		"input": inputMap,
@@ -575,6 +578,21 @@ func (lc *LinearClient) GetIssue(identifier string) (*Issue, error) {
 					name
 				}
 				priority
+				parent {
+					id
+					identifier
+					title
+				}
+				children {
+					nodes {
+						id
+						identifier
+						title
+						state {
+							name
+						}
+					}
+				}
 			}
 		}
 	`, identifier)
