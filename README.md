@@ -5,6 +5,7 @@ A command-line interface for Linear.app. Manage issues, search, comment, and str
 ## Features
 
 - **Issue Management**: List, create, update, and search issues
+- **Sub-issues**: Create and view sub-issues for breaking down work
 - **Quick Actions**: Open issues in browser, add comments
 - **Start Command**: One command to assign yourself, set "In Progress", and create a git branch
 - **Status Filtering**: Filter issues by any Linear state
@@ -58,6 +59,20 @@ linear-cli search "authentication bug"
 linear-cli search "login" -d          # With descriptions
 ```
 
+### View Issue Details
+
+```bash
+linear-cli get ENG-123
+```
+
+Displays issue details including state, assignee, description, parent issue (if any), and sub-issues.
+
+### View Comments
+
+```bash
+linear-cli comments ENG-123
+```
+
 ### Open in Browser
 
 ```bash
@@ -76,6 +91,7 @@ linear-cli comment ENG-123            # Interactive prompt
 ```bash
 linear-cli create -t "Fix login bug" -T ENG
 linear-cli create -t "New feature" -T ENG -d "Description here" -p 2
+linear-cli create -t "Sub-task" -T ENG -P ENG-123   # Create sub-issue
 ```
 
 Flags:
@@ -85,6 +101,7 @@ Flags:
 - `-p, --priority` - Priority (1-4)
 - `-s, --state` - Initial state
 - `-a, --assignee` - Assignee
+- `-P, --parent` - Parent issue for sub-issues (e.g., ENG-123)
 
 ### Update Issue
 
