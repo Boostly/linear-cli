@@ -870,3 +870,57 @@ func (lc *LinearClient) GetInProgressState(teamID string) (*WorkflowState, error
 
 	return nil, fmt.Errorf("no 'In Progress' state found for team")
 }
+
+func (lc *LinearClient) GetComments(identifier string) ([]Comment, error) {
+	query := fmt.Sprintf(`
+		query {
+			issue(id: "%s") {
+				comments {
+					nodes {
+						id
+						body
+						createdAt
+						user {
+							name
+						}
+					}
+				}
+			}
+		}
+	`, identifier)
+
+	reqBody := GraphQLRequest{Query: query}
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", linearAPIURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", lc.apiKey)
+
+	resp, err := lc.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+	}
+
+	var commentsResp CommentsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&commentsResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if len(commentsResp.Errors) > 0 {
+		return nil, fmt.Errorf("API error: %s", commentsResp.Errors[0].Message)
+	}
+
+	return commentsResp.Data.Issue.Comments.Nodes, nil
+}

@@ -13,7 +13,7 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "linear",
+	Use:   "linear-cli",
 	Short: "A CLI for Linear.app",
 	Long: `Linear CLI is a command-line interface for interacting with Linear.app.
 It allows you to fetch issues, create and update them, search, and more.`,

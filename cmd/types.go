@@ -212,3 +212,17 @@ type IssueSearchResponse struct {
 		Message string `json:"message"`
 	} `json:"errors,omitempty"`
 }
+
+// CommentsResponse for fetching issue comments
+type CommentsResponse struct {
+	Data struct {
+		Issue struct {
+			Comments struct {
+				Nodes []Comment `json:"nodes"`
+			} `json:"comments"`
+		} `json:"issue"`
+	} `json:"data"`
+	Errors []struct {
+		Message string `json:"message"`
+	} `json:"errors,omitempty"`
+}
