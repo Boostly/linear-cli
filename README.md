@@ -6,6 +6,7 @@ A command-line interface for Linear.app. Manage issues, search, comment, and str
 
 - **Issue Management**: List, create, update, and search issues
 - **Sub-issues**: Create and view sub-issues for breaking down work
+- **Team Transfers**: Move issues between teams
 - **Quick Actions**: Open issues in browser, add comments
 - **Start Command**: One command to assign yourself, set "In Progress", and create a git branch
 - **Status Filtering**: Filter issues by any Linear state
@@ -108,6 +109,7 @@ Flags:
 ```bash
 linear-cli update -i ENG-123 -s "Done"
 linear-cli update -i ENG-123 -a "john@example.com" -p 1
+linear-cli update -i ENG-123 -T "Product"         # Move to another team
 ```
 
 Flags:
@@ -117,6 +119,9 @@ Flags:
 - `-s, --state` - New state
 - `-a, --assignee` - New assignee
 - `-p, --priority` - New priority
+- `-T, --team` - Move issue to another team (by name or key)
+
+Note: When moving an issue to another team, the issue identifier will change (e.g., ENG-123 → PROD-456).
 
 ### Start Working (Power Command)
 
