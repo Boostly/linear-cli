@@ -683,6 +683,9 @@ func (lc *LinearClient) UpdateIssue(issueID string, input IssueUpdateInput) (*Is
 	if input.AssigneeID != "" {
 		inputMap["assigneeId"] = input.AssigneeID
 	}
+	if input.TeamID != "" {
+		inputMap["teamId"] = input.TeamID
+	}
 
 	variables := map[string]interface{}{
 		"id":    issueID,

@@ -169,6 +169,7 @@ type IssueUpdateInput struct {
 	Priority    *int // pointer to distinguish 0 from unset
 	StateID     string
 	AssigneeID  string
+	TeamID      string
 }
 
 // IssueUpdateResponse for the mutation response

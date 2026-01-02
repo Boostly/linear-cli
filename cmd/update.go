@@ -15,6 +15,7 @@ var (
 	updatePriority    int
 	updateState       string
 	updateAssignee    string
+	updateTeam        string
 	updatePrioritySet bool
 )
 
@@ -26,10 +27,11 @@ var updateCmd = &cobra.Command{
 Requires an issue identifier (e.g., ENG-123) or issue ID.
 
 Examples:
-  linear-tui update -i ENG-123 -t "New title"
-  linear-tui update -i ENG-123 -s "In Progress"
-  linear-tui update -i ENG-123 -a "john@example.com" -p 2
-  linear-tui update -i ENG-123 -d "Updated description"`,
+  linear-cli update -i ENG-123 -t "New title"
+  linear-cli update -i ENG-123 -s "In Progress"
+  linear-cli update -i ENG-123 -a "john@example.com" -p 2
+  linear-cli update -i ENG-123 -d "Updated description"
+  linear-cli update -i ENG-123 -T "Product"    # Move to another team`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if updateIssueID == "" {
 			fmt.Println("Error: issue identifier is required (-i, --issue)")
@@ -42,10 +44,11 @@ Examples:
 		stateChanged := cmd.Flags().Changed("state")
 		assigneeChanged := cmd.Flags().Changed("assignee")
 		priorityChanged := cmd.Flags().Changed("priority")
+		teamChanged := cmd.Flags().Changed("team")
 
-		if !titleChanged && !descChanged && !stateChanged && !assigneeChanged && !priorityChanged {
+		if !titleChanged && !descChanged && !stateChanged && !assigneeChanged && !priorityChanged && !teamChanged {
 			fmt.Println("Error: at least one field to update is required")
-			fmt.Println("Use -t (title), -d (description), -s (state), -a (assignee), or -p (priority)")
+			fmt.Println("Use -t (title), -d (description), -s (state), -a (assignee), -p (priority), or -T (team)")
 			os.Exit(1)
 		}
 
@@ -126,6 +129,32 @@ Examples:
 			input.AssigneeID = assigneeID
 		}
 
+		// Resolve team name/key to ID if provided
+		if teamChanged {
+			teams, err := client.GetTeams()
+			if err != nil {
+				fmt.Printf("Error fetching teams: %v\n", err)
+				os.Exit(1)
+			}
+
+			var teamID string
+			for _, team := range teams {
+				if strings.EqualFold(team.Name, updateTeam) || strings.EqualFold(team.Key, updateTeam) {
+					teamID = team.ID
+					break
+				}
+			}
+
+			if teamID == "" {
+				fmt.Printf("Error: team '%s' not found. Available teams:\n", updateTeam)
+				for _, team := range teams {
+					fmt.Printf("  - %s (%s)\n", team.Name, team.Key)
+				}
+				os.Exit(1)
+			}
+			input.TeamID = teamID
+		}
+
 		fmt.Printf("Updating issue %s...\n", issue.Identifier)
 
 		updated, err := client.UpdateIssue(issue.ID, input)
@@ -150,4 +179,5 @@ func init() {
 	updateCmd.Flags().IntVarP(&updatePriority, "priority", "p", 0, "Priority (0=None, 1=Urgent, 2=High, 3=Medium, 4=Low)")
 	updateCmd.Flags().StringVarP(&updateState, "state", "s", "", "New workflow state name")
 	updateCmd.Flags().StringVarP(&updateAssignee, "assignee", "a", "", "New assignee name or email")
+	updateCmd.Flags().StringVarP(&updateTeam, "team", "T", "", "Move issue to another team (name or key)")
 }
